@@ -34,6 +34,12 @@ public:
     UFUNCTION(BlueprintCallable)
     void SetCardDataTable(UDataTable* InCardDataTable);
 
+    UFUNCTION(BlueprintPure)
+    FCardSystemSaveData BuildSaveData() const;
+
+    UFUNCTION(BlueprintCallable)
+    void ApplySaveData(const FCardSystemSaveData& InData);
+
 private:
     UPROPERTY(EditAnywhere, Category="Data")
     UDataTable* CardDataTable = nullptr;

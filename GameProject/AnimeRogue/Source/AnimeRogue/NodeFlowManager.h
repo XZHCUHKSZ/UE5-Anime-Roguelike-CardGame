@@ -29,6 +29,9 @@ public:
     bool StartFlowFromSave();
 
     UFUNCTION(BlueprintCallable)
+    bool RestoreFromLoadedData(ENodeFlowState SavedFlowState, const FBattleSaveData& BattleSaveData);
+
+    UFUNCTION(BlueprintCallable)
     bool CompleteBattleNode(bool bPlayerWon);
 
     UFUNCTION(BlueprintCallable)
@@ -84,5 +87,5 @@ private:
     void SetFlowState(ENodeFlowState NewState);
     bool EnterCurrentNode();
     bool AdvanceToNextNodeOrComplete();
-    void AutoSaveIfEnabled() const;
+    void AutoSaveIfEnabled();
 };

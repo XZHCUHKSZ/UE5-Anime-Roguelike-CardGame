@@ -279,6 +279,42 @@ struct FRunSaveData
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite)
     TArray<FShopCardOffer> PendingShopOffers;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    ENodeFlowState SavedFlowState = ENodeFlowState::Idle;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    bool bHasBattleSnapshot = false;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    EBattlePhase BattlePhase = EBattlePhase::BattleStart;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    int32 BattleEnergy = 0;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    FUnitState BattlePlayerState;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    FUnitState BattleEnemyState;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    FName BattleEnemyIntentScriptId = NAME_None;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    int32 BattleEnemyIntentIndex = 0;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    FString BattleCurrentEnemyIntent;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    TArray<FRuntimeCard> BattleDrawPile;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    TArray<FRuntimeCard> BattleHand;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    TArray<FRuntimeCard> BattleDiscardPile;
 };
 
 USTRUCT(BlueprintType)
@@ -393,4 +429,52 @@ struct FUIRuntimeSnapshot
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite)
     TArray<FString> BattleLog;
+};
+
+USTRUCT(BlueprintType)
+struct FCardSystemSaveData
+{
+    GENERATED_BODY()
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    TArray<FRuntimeCard> DrawPile;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    TArray<FRuntimeCard> Hand;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    TArray<FRuntimeCard> DiscardPile;
+};
+
+USTRUCT(BlueprintType)
+struct FBattleSaveData
+{
+    GENERATED_BODY()
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    bool bHasActiveBattle = false;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    EBattlePhase CurrentPhase = EBattlePhase::BattleStart;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    int32 CurrentEnergy = 0;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    FUnitState PlayerState;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    FUnitState EnemyState;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    FName EnemyIntentScriptId = NAME_None;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    int32 EnemyIntentIndex = 0;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    FString CurrentEnemyIntent;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    FCardSystemSaveData CardSystem;
 };

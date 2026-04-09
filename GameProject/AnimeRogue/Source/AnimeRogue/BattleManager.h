@@ -57,6 +57,12 @@ public:
     UFUNCTION(BlueprintPure)
     TArray<FString> GetBattleLog() const { return BattleLog; }
 
+    UFUNCTION(BlueprintPure)
+    FBattleSaveData BuildBattleSaveData() const;
+
+    UFUNCTION(BlueprintCallable)
+    void ApplyBattleSaveData(const FBattleSaveData& InData);
+
 protected:
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Battle")
     int32 EnergyPerTurn = 3;

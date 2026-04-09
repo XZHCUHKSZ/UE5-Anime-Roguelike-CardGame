@@ -343,3 +343,41 @@ const FCardData* ABattleManager::FindCardData(const FName& CardId) const
 
     return CardDataTable->FindRow<FCardData>(CardId, TEXT("FindCardData"));
 }
+
+FBattleSaveData ABattleManager::BuildBattleSaveData() const
+{
+    FBattleSaveData Data;
+    Data.bHasActiveBattle = (CurrentPhase != EBattlePhase::BattleEnd);
+    Data.CurrentPhase = CurrentPhase;
+    Data.CurrentEnergy = CurrentEnergy;
+    Data.PlayerState = PlayerState;
+    Data.EnemyState = EnemyState;
+    Data.EnemyIntentScriptId = EnemyIntentScriptId;
+    Data.EnemyIntentIndex = EnemyIntentIndex;
+    Data.CurrentEnemyIntent = CurrentEnemyIntent;
+    if (CardSystem)
+    {
+        Data.CardSystem = CardSystem->BuildSaveData();
+    }
+    return Data;
+}
+
+void ABattleManager::ApplyBattleSaveData(const FBattleSaveData& InData)
+{
+    CurrentPhase = InData.CurrentPhase;
+    CurrentEnergy = InData.CurrentEnergy;
+    PlayerState = InData.PlayerState;
+    EnemyState = InData.EnemyState;
+    EnemyIntentScriptId = InData.EnemyIntentScriptId;
+    EnemyIntentIndex = FMath::Max(0, InData.EnemyIntentIndex);
+
+    LoadEnemyIntentSequence();
+    CurrentEnemyIntent = InData.CurrentEnemyIntent.IsEmpty() ? ResolveCurrentEnemyIntent() : InData.CurrentEnemyIntent;
+    if (CardSystem)
+    {
+        CardSystem->SetCardDataTable(CardDataTable);
+        CardSystem->ApplySaveData(InData.CardSystem);
+    }
+
+    AddBattleLog(TEXT("Battle snapshot restored."));
+}

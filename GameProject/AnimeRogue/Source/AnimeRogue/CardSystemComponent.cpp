@@ -5,6 +5,23 @@ void UCardSystemComponent::SetCardDataTable(UDataTable* InCardDataTable)
     CardDataTable = InCardDataTable;
 }
 
+FCardSystemSaveData UCardSystemComponent::BuildSaveData() const
+{
+    FCardSystemSaveData Data;
+    Data.DrawPile = DrawPile;
+    Data.Hand = Hand;
+    Data.DiscardPile = DiscardPile;
+    return Data;
+}
+
+void UCardSystemComponent::ApplySaveData(const FCardSystemSaveData& InData)
+{
+    DrawPile = InData.DrawPile;
+    Hand = InData.Hand;
+    DiscardPile = InData.DiscardPile;
+    OnDeckChanged.Broadcast();
+}
+
 void UCardSystemComponent::InitializeDeck(const TArray<FName>& InCardIds)
 {
     DrawPile.Reset();

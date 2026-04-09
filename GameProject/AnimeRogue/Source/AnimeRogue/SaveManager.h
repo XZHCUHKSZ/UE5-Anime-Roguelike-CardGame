@@ -6,6 +6,8 @@
 #include "SaveManager.generated.h"
 
 class ARunManager;
+class ABattleManager;
+class ANodeFlowManager;
 
 UCLASS()
 class ANIMEROGUE_API ASaveManager : public AActor
@@ -26,6 +28,12 @@ public:
 
     UFUNCTION(BlueprintCallable)
     bool LoadMeta(FMetaSaveData& OutMetaData);
+
+    UFUNCTION(BlueprintCallable)
+    bool SaveFlowState(ARunManager* RunManager, ABattleManager* BattleManager, ANodeFlowManager* NodeFlowManager);
+
+    UFUNCTION(BlueprintCallable)
+    bool LoadFlowState(ARunManager* RunManager, ABattleManager* BattleManager, ANodeFlowManager* NodeFlowManager);
 
     UFUNCTION(BlueprintPure)
     bool HasRunSave() const;

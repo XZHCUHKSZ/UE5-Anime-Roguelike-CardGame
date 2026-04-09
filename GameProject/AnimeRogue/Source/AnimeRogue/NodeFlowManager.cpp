@@ -31,15 +31,7 @@ bool ANodeFlowManager::StartFlowFromSave()
         return false;
     }
 
-    if (!SaveManager->LoadRun(RunManager))
-    {
-        return false;
-    }
-
-    ActiveNode = RunManager->GetCurrentNode();
-    const bool bEntered = EnterCurrentNode();
-    AutoSaveIfEnabled();
-    return bEntered;
+    return SaveManager->LoadFlowState(RunManager, BattleManager, this);
 }
 
 bool ANodeFlowManager::CompleteBattleNode(const bool bPlayerWon)
@@ -118,6 +110,59 @@ bool ANodeFlowManager::LeaveShopAndAdvance()
     const bool bAdvanced = AdvanceToNextNodeOrComplete();
     AutoSaveIfEnabled();
     return bAdvanced;
+}
+
+bool ANodeFlowManager::RestoreFromLoadedData(const ENodeFlowState SavedFlowState, const FBattleSaveData& BattleSaveData)
+{
+    if (!RunManager)
+    {
+        return false;
+    }
+
+    ActiveNode = RunManager->GetCurrentNode();
+    OnFlowNodeEntered.Broadcast(ActiveNode);
+
+    switch (SavedFlowState)
+    {
+    case ENodeFlowState::InBattle:
+        if (!BattleManager)
+        {
+            return false;
+        }
+        BattleManager->ApplyBattleSaveData(BattleSaveData);
+        SetFlowState(ENodeFlowState::InBattle);
+        return true;
+    case ENodeFlowState::InEvent:
+        if (!EventManager)
+        {
+            return false;
+        }
+        if (RunManager->HasPendingEvent())
+        {
+            EventManager->SetCurrentEvent(RunManager->GetPendingEvent());
+        }
+        SetFlowState(ENodeFlowState::InEvent);
+        return true;
+    case ENodeFlowState::InShop:
+        if (!ShopManager)
+        {
+            return false;
+        }
+        if (RunManager->HasPendingShopOffers())
+        {
+            ShopManager->SetCurrentOffers(RunManager->GetPendingShopOffers());
+        }
+        SetFlowState(ENodeFlowState::InShop);
+        return true;
+    case ENodeFlowState::InRest:
+        SetFlowState(ENodeFlowState::InRest);
+        return true;
+    case ENodeFlowState::RunComplete:
+        SetFlowState(ENodeFlowState::RunComplete);
+        return true;
+    default:
+        return EnterCurrentNode();
+    }
 }
 
 void ANodeFlowManager::SetFlowState(const ENodeFlowState NewState)
@@ -229,12 +274,12 @@ bool ANodeFlowManager::AdvanceToNextNodeOrComplete()
     return EnterCurrentNode();
 }
 
-void ANodeFlowManager::AutoSaveIfEnabled() const
+void ANodeFlowManager::AutoSaveIfEnabled()
 {
     if (!bEnableAutoSave || !SaveManager || !RunManager || !RunManager->IsRunActive())
     {
         return;
     }
 
-    SaveManager->SaveRun(RunManager);
+    SaveManager->SaveFlowState(RunManager, BattleManager, this);
 }
