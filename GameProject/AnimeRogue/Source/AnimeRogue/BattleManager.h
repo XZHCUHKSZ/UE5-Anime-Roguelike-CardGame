@@ -128,4 +128,8 @@ private:
     void ExecuteEnemyIntent(const FString& IntentToken);
     void AddBattleLog(const FString& Line);
     void ApplyDamageToPlayer(int32 Damage);
+    void ApplyDamageToEnemy(int32 Damage);
+    void GainPlayerBlock(int32 BlockValue);
+    void ApplyCardEffectById(const FName& CardId);
+    const FCardData* FindCardData(const FName& CardId) const;
 };

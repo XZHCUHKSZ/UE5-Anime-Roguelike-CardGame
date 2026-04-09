@@ -40,6 +40,13 @@ bool ABattleManager::TryPlayCardFromHand(const int32 HandIndex)
         return false;
     }
 
+    const TArray<FRuntimeCard> CurrentHand = CardSystem->GetHand();
+    if (!CurrentHand.IsValidIndex(HandIndex))
+    {
+        return false;
+    }
+    const FName PlayedCardId = CurrentHand[HandIndex].CardId;
+
     int32 PlayedCost = 0;
     if (!CardSystem->TryPlayCard(HandIndex, CurrentEnergy, PlayedCost))
     {
@@ -47,6 +54,7 @@ bool ABattleManager::TryPlayCardFromHand(const int32 HandIndex)
     }
 
     CurrentEnergy = FMath::Max(0, CurrentEnergy - PlayedCost);
+    ApplyCardEffectById(PlayedCardId);
     return true;
 }
 
@@ -248,4 +256,90 @@ void ABattleManager::ApplyDamageToPlayer(int32 Damage)
     PlayerState.Block -= BlockAbsorb;
     const int32 FinalDamage = Damage - BlockAbsorb;
     PlayerState.HP = FMath::Max(0, PlayerState.HP - FinalDamage);
+}
+
+void ABattleManager::ApplyDamageToEnemy(int32 Damage)
+{
+    if (Damage <= 0)
+    {
+        return;
+    }
+
+    const int32 BlockAbsorb = FMath::Min(EnemyState.Block, Damage);
+    EnemyState.Block -= BlockAbsorb;
+    const int32 FinalDamage = Damage - BlockAbsorb;
+    EnemyState.HP = FMath::Max(0, EnemyState.HP - FinalDamage);
+}
+
+void ABattleManager::GainPlayerBlock(const int32 BlockValue)
+{
+    if (BlockValue <= 0)
+    {
+        return;
+    }
+
+    PlayerState.Block += BlockValue;
+}
+
+void ABattleManager::ApplyCardEffectById(const FName& CardId)
+{
+    const FCardData* Card = FindCardData(CardId);
+    if (!Card)
+    {
+        AddBattleLog(FString::Printf(TEXT("Card data missing: %s"), *CardId.ToString()));
+        return;
+    }
+
+    const FString EffectId = Card->EffectScriptId.ToString();
+    const int32 Value = FMath::Max(0, Card->BaseValue);
+
+    if (EffectId == "effect_deal_damage" || EffectId == "effect_damage_if_played_after_attack" || EffectId == "effect_bonus_per_attack_this_turn")
+    {
+        ApplyDamageToEnemy(Value);
+        AddBattleLog(FString::Printf(TEXT("Play %s: deal %d damage."), *CardId.ToString(), Value));
+    }
+    else if (EffectId == "effect_gain_block")
+    {
+        GainPlayerBlock(Value);
+        AddBattleLog(FString::Printf(TEXT("Play %s: gain %d block."), *CardId.ToString(), Value));
+    }
+    else if (EffectId == "effect_draw_card")
+    {
+        CardSystem->DrawCards(FMath::Max(1, Value));
+        AddBattleLog(FString::Printf(TEXT("Play %s: draw %d card(s)."), *CardId.ToString(), FMath::Max(1, Value)));
+    }
+    else
+    {
+        // Fallback behavior keeps prototype playable while effect scripts are still expanding.
+        if (Card->CardType == ECardType::Attack)
+        {
+            ApplyDamageToEnemy(Value);
+            AddBattleLog(FString::Printf(TEXT("Play %s: fallback attack %d damage."), *CardId.ToString(), Value));
+        }
+        else if (Card->CardType == ECardType::Skill)
+        {
+            GainPlayerBlock(Value);
+            AddBattleLog(FString::Printf(TEXT("Play %s: fallback skill gain %d block."), *CardId.ToString(), Value));
+        }
+        else
+        {
+            AddBattleLog(FString::Printf(TEXT("Play %s: effect pending (%s)."), *CardId.ToString(), *EffectId));
+        }
+    }
+
+    if (EnemyState.HP <= 0)
+    {
+        AddBattleLog(TEXT("Enemy defeated."));
+        CompleteBattle(true);
+    }
+}
+
+const FCardData* ABattleManager::FindCardData(const FName& CardId) const
+{
+    if (!CardDataTable || CardId.IsNone())
+    {
+        return nullptr;
+    }
+
+    return CardDataTable->FindRow<FCardData>(CardId, TEXT("FindCardData"));
 }
