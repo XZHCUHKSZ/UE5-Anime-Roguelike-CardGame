@@ -159,14 +159,39 @@ void ABattleManager::EnterPlayerTurnStart()
 void ABattleManager::EnterEnemyTurn()
 {
     CurrentPhase = EBattlePhase::EnemyTurnStart;
-    EnemyState.Block = 0;
-    ProcessTurnStartStatuses(EnemyState, false);
     CurrentPhase = EBattlePhase::EnemyMain;
 
-    const FString IntentToken = ResolveCurrentEnemyIntent();
-    ExecuteEnemyIntent(IntentToken);
-    EnemyIntentIndex += 1;
-    SyncPrimaryEnemyToArray();
+    for (int32 i = 0; i < EnemyUnits.Num(); ++i)
+    {
+        if (EnemyUnits[i].State.HP <= 0)
+        {
+            continue;
+        }
+
+        EnemyState = EnemyUnits[i].State;
+        EnemyIntentScriptId = EnemyUnits[i].IntentScriptId;
+        EnemyIntentIndex = EnemyUnits[i].IntentIndex;
+        EnemyIntentSequence = EnemyUnits[i].IntentSequence;
+
+        EnemyState.Block = 0;
+        ProcessTurnStartStatuses(EnemyState, false);
+
+        const FString IntentToken = ResolveEnemyIntentByIndex(i);
+        CurrentEnemyIntent = IntentToken;
+        ExecuteEnemyIntent(IntentToken);
+        EnemyIntentIndex += 1;
+
+        EnemyUnits[i].State = EnemyState;
+        EnemyUnits[i].IntentIndex = EnemyIntentIndex;
+        EnemyUnits[i].CurrentIntent = CurrentEnemyIntent;
+
+        if (PlayerState.HP <= 0)
+        {
+            break;
+        }
+    }
+
+    SyncPrimaryEnemyFromArray();
 
     CurrentPhase = EBattlePhase::EnemyTurnEnd;
 
@@ -270,19 +295,61 @@ void ABattleManager::LoadIntentSequenceForEnemy(FEnemyRuntimeState& EnemyUnit)
 FString ABattleManager::ResolveCurrentEnemyIntent() const
 {
     const int32 PrimaryIdx = GetPrimaryEnemyIndex();
-    if (!EnemyUnits.IsValidIndex(PrimaryIdx))
+    return ResolveEnemyIntentByIndex(PrimaryIdx);
+}
+
+FString ABattleManager::ResolveEnemyIntentByIndex(const int32 EnemyIndex) const
+{
+    if (!EnemyUnits.IsValidIndex(EnemyIndex))
     {
         return TEXT("atk6");
     }
 
-    const FEnemyRuntimeState& Enemy = EnemyUnits[PrimaryIdx];
-    if (Enemy.IntentSequence.IsEmpty())
+    const FEnemyRuntimeState& Enemy = EnemyUnits[EnemyIndex];
+    if (Enemy.State.HP <= 0 || Enemy.IntentSequence.IsEmpty())
     {
         return TEXT("atk6");
     }
 
     const int32 SafeIndex = Enemy.IntentIndex % Enemy.IntentSequence.Num();
     return Enemy.IntentSequence[SafeIndex];
+}
+
+void ABattleManager::ApplyDamageToEnemyIndex(const int32 EnemyIndex, int32 Damage)
+{
+    if (!EnemyUnits.IsValidIndex(EnemyIndex) || EnemyUnits[EnemyIndex].State.HP <= 0 || Damage <= 0)
+    {
+        return;
+    }
+
+    FUnitState& Target = EnemyUnits[EnemyIndex].State;
+    Damage = ModifyIncomingDamage(Damage, Target);
+    const int32 BlockAbsorb = FMath::Min(Target.Block, Damage);
+    Target.Block -= BlockAbsorb;
+    const int32 FinalDamage = Damage - BlockAbsorb;
+    Target.HP = FMath::Max(0, Target.HP - FinalDamage);
+
+    if (EnemyIndex == GetPrimaryEnemyIndex())
+    {
+        EnemyState = Target;
+    }
+}
+
+void ABattleManager::ApplyDamageToAllEnemies(const int32 Damage)
+{
+    if (Damage <= 0)
+    {
+        return;
+    }
+
+    for (int32 i = 0; i < EnemyUnits.Num(); ++i)
+    {
+        if (EnemyUnits[i].State.HP > 0)
+        {
+            ApplyDamageToEnemyIndex(i, Damage);
+        }
+    }
+    SyncPrimaryEnemyFromArray();
 }
 
 void ABattleManager::ExecuteEnemyIntent(const FString& IntentToken)
@@ -437,6 +504,12 @@ void ABattleManager::ApplyCardEffectById(const FName& CardId)
         CardSystem->DrawCards(FMath::Max(1, Value));
         AddBattleLog(FString::Printf(TEXT("Play %s: draw %d card(s)."), *CardId.ToString(), FMath::Max(1, Value)));
     }
+    else if (EffectId == "effect_aoe_damage")
+    {
+        const int32 FinalDamage = ModifyOutgoingDamage(Value, PlayerState, true);
+        ApplyDamageToAllEnemies(FinalDamage);
+        AddBattleLog(FString::Printf(TEXT("Play %s: deal %d to all enemies."), *CardId.ToString(), FinalDamage));
+    }
     else if (EffectId == "effect_apply_bleed_2")
     {
         const int32 FinalDamage = ModifyOutgoingDamage(Value, PlayerState, true);
@@ -520,6 +593,10 @@ void ABattleManager::ApplyCardEffectById(const FName& CardId)
         {
             CompleteBattle(true);
         }
+    }
+    else if (!HasAliveEnemies())
+    {
+        CompleteBattle(true);
     }
 }
 

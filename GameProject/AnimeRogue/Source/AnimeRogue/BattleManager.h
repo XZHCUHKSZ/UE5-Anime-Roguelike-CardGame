@@ -144,6 +144,7 @@ private:
     void LoadEnemyIntentSequence();
     void LoadIntentSequenceForEnemy(FEnemyRuntimeState& EnemyUnit);
     FString ResolveCurrentEnemyIntent() const;
+    FString ResolveEnemyIntentByIndex(int32 EnemyIndex) const;
     void ExecuteEnemyIntent(const FString& IntentToken);
     void AddBattleLog(const FString& Line);
     void ApplyDamageToPlayer(int32 Damage);
@@ -159,6 +160,8 @@ private:
     int32 ModifyIncomingDamage(int32 Damage, const FUnitState& Defender) const;
     void ProcessTurnStartStatuses(FUnitState& Unit, bool bIsPlayer);
     void HealPlayer(int32 Value);
+    void ApplyDamageToEnemyIndex(int32 EnemyIndex, int32 Damage);
+    void ApplyDamageToAllEnemies(int32 Damage);
     int32 GetPrimaryEnemyIndex() const;
     bool HasAliveEnemies() const;
     void SyncPrimaryEnemyToArray();
