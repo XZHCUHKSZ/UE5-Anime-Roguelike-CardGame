@@ -1,0 +1,4 @@
+relic_id,name,rarity,trigger_timing,effect_script_id,desc
+relic_blood_charm,血之护符,Common,BattleStart,effect_gain_block_4,战斗开始时获得4点格挡
+relic_coin_eye,金币之眼,Uncommon,BattleEnd,effect_gain_gold_10,战斗结束额外获得10金币
+relic_arcane_leaf,奥术叶,Rare,TurnStart,effect_draw_if_empty_energy,若能量为0则抽1张牌

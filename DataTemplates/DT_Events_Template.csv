@@ -1,0 +1,4 @@
+event_id,title,rarity,option_a,option_b,option_c,result_a_script,result_b_script,result_c_script
+event_fountain_01,月泉许愿,Common,回复20%生命,失去10生命获得稀有卡,离开,event_heal_20pct,event_pay_hp_get_rare_card,event_leave
+event_merchant_01,黑市交易,Uncommon,花75金币删卡,花120金币购遗物,离开,event_remove_card,event_buy_random_relic,event_leave
+event_mask_01,无面契约,Rare,获得诅咒换强力遗物,拒绝,离开,event_curse_for_relic,event_nothing,event_leave

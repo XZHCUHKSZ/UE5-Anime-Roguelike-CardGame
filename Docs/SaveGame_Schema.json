@@ -1,0 +1,43 @@
+{
+  "save_version": 1,
+  "meta_progression": {
+    "unlocked_characters": [
+      "char_sword_girl",
+      "char_arcane_girl"
+    ],
+    "unlocked_cards": [],
+    "unlocked_relics": [],
+    "ascension_level": 0,
+    "total_runs": 0,
+    "total_wins": 0
+  },
+  "run_state": {
+    "is_active_run": false,
+    "run_seed": 0,
+    "selected_character_id": "",
+    "floor_index": 0,
+    "hp_current": 0,
+    "hp_max": 0,
+    "gold": 0,
+    "deck_card_ids": [],
+    "relic_ids": [],
+    "map_node_history": [],
+    "battle_snapshot": {
+      "in_battle": false,
+      "turn_index": 0,
+      "draw_pile_ids": [],
+      "discard_pile_ids": [],
+      "hand_card_ids": [],
+      "exhaust_pile_ids": [],
+      "player_buffs": [],
+      "enemy_states": []
+    }
+  },
+  "settings": {
+    "language": "zh-CN",
+    "battle_speed": 1.0,
+    "volume_master": 0.8,
+    "volume_bgm": 0.7,
+    "volume_sfx": 0.8
+  }
+}

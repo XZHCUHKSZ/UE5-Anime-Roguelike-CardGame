@@ -1,0 +1,7 @@
+intent_script_id,pattern,description
+intent_basic_melee,atk6|atk6|def5,基础近战循环
+intent_berserker,atk8|buff_str1|atk10,每3回合强化爆发
+intent_trickster,debuff_weak1|atk7|atk7,先上虚弱再连击
+intent_tank,def10|atk5|def8|atk9,防御型拖回合
+intent_mage,debuff_frail1|atk6|buff_focus1,法术压制与增益
+intent_boss_act1,atk12|summon_1|def12|atk14|buff_str2,Act1 Boss多阶段脚本

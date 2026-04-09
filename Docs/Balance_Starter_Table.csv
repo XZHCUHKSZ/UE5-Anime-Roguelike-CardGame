@@ -1,0 +1,15 @@
+metric,target,notes
+normal_battle_turns,4-6,普通战目标回合数
+elite_battle_turns,6-9,精英战目标回合数
+boss_battle_turns,9-13,Boss战目标回合数
+player_start_hp,72,起始角色生命
+player_start_energy,3,每回合基础能量
+player_start_hand,5,首回合抽牌数
+player_draw_per_turn,5,每回合抽牌数
+base_attack_card_damage,6,0费/1费卡基准伤害系数基线
+base_block_card_value,5,1费防御卡基准格挡
+rare_card_pick_rate,0.12,普通战后高稀有卡出现概率
+elite_relic_drop_rate,1.00,精英战遗物必掉
+shop_remove_card_cost,75,商店删卡初始价格
+upgrade_value_multiplier,1.30,升级后卡牌价值倍率目标
+event_negative_ratio,0.25,事件负面结果占比上限

@@ -1,0 +1,18 @@
+{
+  "act_id": "act_1",
+  "seed": 10101,
+  "nodes": [
+    { "id": "n1", "type": "battle", "next": ["n2", "n3"] },
+    { "id": "n2", "type": "event", "next": ["n4"] },
+    { "id": "n3", "type": "battle", "next": ["n4"] },
+    { "id": "n4", "type": "shop", "next": ["n5", "n6"] },
+    { "id": "n5", "type": "elite", "next": ["n7"] },
+    { "id": "n6", "type": "rest", "next": ["n7"] },
+    { "id": "n7", "type": "battle", "next": ["n8", "n9"] },
+    { "id": "n8", "type": "event", "next": ["n10"] },
+    { "id": "n9", "type": "battle", "next": ["n10"] },
+    { "id": "n10", "type": "rest", "next": ["n11"] },
+    { "id": "n11", "type": "elite", "next": ["n12"] },
+    { "id": "n12", "type": "boss", "next": [] }
+  ]
+}

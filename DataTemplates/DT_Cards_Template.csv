@@ -1,0 +1,4 @@
+card_id,name,cost,rarity,card_type,target_type,base_value,upgrade_value,keywords,effect_script_id
+card_strike_01,斩击,1,Common,Attack,Enemy,6,9,None,effect_deal_damage
+card_guard_01,格挡,1,Common,Skill,Self,5,8,Block,effect_gain_block
+card_focus_01,凝神,1,Uncommon,Skill,Self,1,2,Draw,effect_draw_card

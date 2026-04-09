@@ -1,0 +1,4 @@
+enemy_id,name,hp_max,intent_pattern,reward_gold,reward_card_pick
+enemy_slime_a,软泥A,30,atk6|atk6|def5,15,1
+enemy_bandit_a,盗匪A,42,atk8|buff_str1|atk10,18,1
+enemy_mage_a,术师A,36,debuff_weak1|atk7|atk7,20,1
