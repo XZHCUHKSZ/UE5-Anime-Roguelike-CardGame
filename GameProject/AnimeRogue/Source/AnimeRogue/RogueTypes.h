@@ -286,3 +286,99 @@ struct FMetaSaveData
     UPROPERTY(EditAnywhere, BlueprintReadWrite)
     TArray<FName> UnlockedCharacters;
 };
+
+USTRUCT(BlueprintType)
+struct FUIBattleSnapshot
+{
+    GENERATED_BODY()
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    int32 Energy = 0;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    FUnitState PlayerState;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    FUnitState EnemyState;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    FString EnemyIntent;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    TArray<FRuntimeCard> HandCards;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    TArray<FCardRewardOption> RewardOptions;
+};
+
+USTRUCT(BlueprintType)
+struct FUIEventSnapshot
+{
+    GENERATED_BODY()
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    FName EventId = NAME_None;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    FText Title;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    TArray<FEventOptionData> Options;
+};
+
+USTRUCT(BlueprintType)
+struct FUIShopSnapshot
+{
+    GENERATED_BODY()
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    TArray<FShopCardOffer> CardOffers;
+};
+
+USTRUCT(BlueprintType)
+struct FUIRunSnapshot
+{
+    GENERATED_BODY()
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    bool bRunActive = false;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    int32 Gold = 0;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    int32 CurrentHP = 1;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    int32 MaxHP = 1;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    FMapNodeData ActiveNode;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    TArray<FString> RunLog;
+};
+
+USTRUCT(BlueprintType)
+struct FUIRuntimeSnapshot
+{
+    GENERATED_BODY()
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    ENodeFlowState FlowState = ENodeFlowState::Idle;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    FUIRunSnapshot Run;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    FUIBattleSnapshot Battle;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    FUIEventSnapshot Event;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    FUIShopSnapshot Shop;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    TArray<FString> BattleLog;
+};
