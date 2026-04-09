@@ -29,7 +29,7 @@ public:
     void DiscardHand();
 
     UFUNCTION(BlueprintPure)
-    const TArray<FRuntimeCard>& GetHand() const { return Hand; }
+    TArray<FRuntimeCard> GetHand() const { return Hand; }
 
     UFUNCTION(BlueprintCallable)
     void SetCardDataTable(UDataTable* InCardDataTable);

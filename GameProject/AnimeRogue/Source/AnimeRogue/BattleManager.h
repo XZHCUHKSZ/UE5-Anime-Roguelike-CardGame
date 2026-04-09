@@ -31,7 +31,7 @@ public:
     void CompleteBattle(bool bPlayerWon);
 
     UFUNCTION(BlueprintPure)
-    const TArray<FCardRewardOption>& GetCurrentRewardOptions() const { return CurrentRewardOptions; }
+    TArray<FCardRewardOption> GetCurrentRewardOptions() const { return CurrentRewardOptions; }
 
     UFUNCTION(BlueprintCallable)
     bool PickRewardCard(int32 OptionIndex, bool bSkip);
@@ -45,6 +45,18 @@ public:
     UFUNCTION(BlueprintPure)
     UCardSystemComponent* GetCardSystem() const { return CardSystem; }
 
+    UFUNCTION(BlueprintPure)
+    FUnitState GetPlayerState() const { return PlayerState; }
+
+    UFUNCTION(BlueprintPure)
+    FUnitState GetEnemyState() const { return EnemyState; }
+
+    UFUNCTION(BlueprintPure)
+    FString GetCurrentEnemyIntent() const { return CurrentEnemyIntent; }
+
+    UFUNCTION(BlueprintPure)
+    TArray<FString> GetBattleLog() const { return BattleLog; }
+
 protected:
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Battle")
     int32 EnergyPerTurn = 3;
@@ -57,6 +69,18 @@ protected:
 
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Data")
     UDataTable* CardDataTable = nullptr;
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Data")
+    UDataTable* EnemyIntentScriptTable = nullptr;
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Battle")
+    FName EnemyIntentScriptId = "intent_basic_melee";
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Battle")
+    int32 PlayerStartHP = 72;
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Battle")
+    int32 EnemyStartHP = 40;
 
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Reward")
     TArray<FName> RewardCardPool;
@@ -77,7 +101,31 @@ private:
     UPROPERTY()
     TArray<FCardRewardOption> CurrentRewardOptions;
 
+    UPROPERTY()
+    FUnitState PlayerState;
+
+    UPROPERTY()
+    FUnitState EnemyState;
+
+    UPROPERTY()
+    FString CurrentEnemyIntent;
+
+    UPROPERTY()
+    TArray<FString> EnemyIntentSequence;
+
+    UPROPERTY()
+    int32 EnemyIntentIndex = 0;
+
+    UPROPERTY()
+    TArray<FString> BattleLog;
+
     void EnterPlayerTurnStart();
     void EnterEnemyTurn();
     void GenerateCardRewards(int32 RewardCount);
+    void InitializeBattleStates();
+    void LoadEnemyIntentSequence();
+    FString ResolveCurrentEnemyIntent() const;
+    void ExecuteEnemyIntent(const FString& IntentToken);
+    void AddBattleLog(const FString& Line);
+    void ApplyDamageToPlayer(int32 Damage);
 };

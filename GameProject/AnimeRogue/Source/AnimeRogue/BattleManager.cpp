@@ -24,8 +24,12 @@ ABattleManager::ABattleManager()
 void ABattleManager::StartBattle()
 {
     CurrentPhase = EBattlePhase::BattleStart;
+    BattleLog.Reset();
+    InitializeBattleStates();
+    LoadEnemyIntentSequence();
     CardSystem->SetCardDataTable(CardDataTable);
     CardSystem->InitializeDeck(StarterDeck);
+    AddBattleLog(TEXT("Battle started."));
     EnterPlayerTurnStart();
 }
 
@@ -92,7 +96,10 @@ void ABattleManager::EnterPlayerTurnStart()
 {
     CurrentPhase = EBattlePhase::PlayerTurnStart;
     CurrentEnergy = EnergyPerTurn;
+    PlayerState.Block = 0;
     CardSystem->DrawCards(DrawPerTurn);
+    CurrentEnemyIntent = ResolveCurrentEnemyIntent();
+    AddBattleLog(FString::Printf(TEXT("Player turn start. Energy=%d, EnemyIntent=%s"), CurrentEnergy, *CurrentEnemyIntent));
     CurrentPhase = EBattlePhase::PlayerMain;
 }
 
@@ -101,9 +108,19 @@ void ABattleManager::EnterEnemyTurn()
     CurrentPhase = EBattlePhase::EnemyTurnStart;
     CurrentPhase = EBattlePhase::EnemyMain;
 
-    // TODO: Implement enemy intent and action logic.
+    const FString IntentToken = ResolveCurrentEnemyIntent();
+    ExecuteEnemyIntent(IntentToken);
+    EnemyIntentIndex += 1;
 
     CurrentPhase = EBattlePhase::EnemyTurnEnd;
+
+    if (PlayerState.HP <= 0)
+    {
+        AddBattleLog(TEXT("Player defeated."));
+        CompleteBattle(false);
+        return;
+    }
+
     EnterPlayerTurnStart();
 }
 
@@ -138,4 +155,97 @@ void ABattleManager::GenerateCardRewards(const int32 RewardCount)
     }
 
     OnBattleRewardReady.Broadcast(CurrentRewardOptions);
+}
+
+void ABattleManager::InitializeBattleStates()
+{
+    PlayerState.MaxHP = PlayerStartHP;
+    PlayerState.HP = PlayerStartHP;
+    PlayerState.Block = 0;
+
+    EnemyState.MaxHP = EnemyStartHP;
+    EnemyState.HP = EnemyStartHP;
+    EnemyState.Block = 0;
+}
+
+void ABattleManager::LoadEnemyIntentSequence()
+{
+    EnemyIntentSequence.Reset();
+    EnemyIntentIndex = 0;
+
+    if (!EnemyIntentScriptTable)
+    {
+        EnemyIntentSequence = { TEXT("atk6"), TEXT("atk6"), TEXT("def5") };
+        return;
+    }
+
+    const FEnemyIntentScriptRow* Row = EnemyIntentScriptTable->FindRow<FEnemyIntentScriptRow>(
+        EnemyIntentScriptId,
+        TEXT("LoadEnemyIntentSequence")
+    );
+    if (!Row || Row->Pattern.IsEmpty())
+    {
+        EnemyIntentSequence = { TEXT("atk6"), TEXT("atk6"), TEXT("def5") };
+        return;
+    }
+
+    Row->Pattern.ParseIntoArray(EnemyIntentSequence, TEXT("|"), true);
+    if (EnemyIntentSequence.IsEmpty())
+    {
+        EnemyIntentSequence = { TEXT("atk6"), TEXT("atk6"), TEXT("def5") };
+    }
+}
+
+FString ABattleManager::ResolveCurrentEnemyIntent() const
+{
+    if (EnemyIntentSequence.IsEmpty())
+    {
+        return TEXT("atk6");
+    }
+
+    const int32 SafeIndex = EnemyIntentIndex % EnemyIntentSequence.Num();
+    return EnemyIntentSequence[SafeIndex];
+}
+
+void ABattleManager::ExecuteEnemyIntent(const FString& IntentToken)
+{
+    if (IntentToken.StartsWith(TEXT("atk")))
+    {
+        const int32 Damage = FCString::Atoi(*IntentToken.RightChop(3));
+        ApplyDamageToPlayer(Damage);
+        AddBattleLog(FString::Printf(TEXT("Enemy uses %s, deals %d damage."), *IntentToken, Damage));
+        return;
+    }
+
+    if (IntentToken.StartsWith(TEXT("def")))
+    {
+        const int32 BlockValue = FCString::Atoi(*IntentToken.RightChop(3));
+        EnemyState.Block += BlockValue;
+        AddBattleLog(FString::Printf(TEXT("Enemy uses %s, gains %d block."), *IntentToken, BlockValue));
+        return;
+    }
+
+    AddBattleLog(FString::Printf(TEXT("Enemy uses %s (not implemented)."), *IntentToken));
+}
+
+void ABattleManager::AddBattleLog(const FString& Line)
+{
+    BattleLog.Add(Line);
+    if (BattleLog.Num() > 50)
+    {
+        BattleLog.RemoveAt(0, BattleLog.Num() - 50);
+    }
+}
+
+void ABattleManager::ApplyDamageToPlayer(int32 Damage)
+{
+    if (Damage <= 0)
+    {
+        return;
+    }
+
+    const int32 BlockAbsorb = FMath::Min(PlayerState.Block, Damage);
+    PlayerState.Block -= BlockAbsorb;
+    const int32 FinalDamage = Damage - BlockAbsorb;
+    PlayerState.HP = FMath::Max(0, PlayerState.HP - FinalDamage);
 }

@@ -139,3 +139,18 @@ struct FMapNodeData
     UPROPERTY(EditAnywhere, BlueprintReadWrite)
     int32 NodeIndex = 0;
 };
+
+USTRUCT(BlueprintType)
+struct FEnemyIntentScriptRow : public FTableRowBase
+{
+    GENERATED_BODY()
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly)
+    FName IntentScriptId = NAME_None;
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly)
+    FString Pattern;
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly)
+    FString Description;
+};
