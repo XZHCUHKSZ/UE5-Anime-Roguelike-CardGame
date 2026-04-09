@@ -58,6 +58,12 @@ public:
     TArray<FString> GetBattleLog() const { return BattleLog; }
 
     UFUNCTION(BlueprintPure)
+    TArray<FEnemyRuntimeState> GetEnemyUnits() const { return EnemyUnits; }
+
+    UFUNCTION(BlueprintCallable)
+    void ConfigureEncounter(const TArray<FName>& EnemyIds);
+
+    UFUNCTION(BlueprintPure)
     FBattleSaveData BuildBattleSaveData() const;
 
     UFUNCTION(BlueprintCallable)
@@ -78,6 +84,9 @@ protected:
 
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Data")
     UDataTable* EnemyIntentScriptTable = nullptr;
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Data")
+    UDataTable* EnemyDataTable = nullptr;
 
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Battle")
     FName EnemyIntentScriptId = "intent_basic_melee";
@@ -125,11 +134,15 @@ private:
     UPROPERTY()
     TArray<FString> BattleLog;
 
+    UPROPERTY()
+    TArray<FEnemyRuntimeState> EnemyUnits;
+
     void EnterPlayerTurnStart();
     void EnterEnemyTurn();
     void GenerateCardRewards(int32 RewardCount);
     void InitializeBattleStates();
     void LoadEnemyIntentSequence();
+    void LoadIntentSequenceForEnemy(FEnemyRuntimeState& EnemyUnit);
     FString ResolveCurrentEnemyIntent() const;
     void ExecuteEnemyIntent(const FString& IntentToken);
     void AddBattleLog(const FString& Line);
@@ -146,4 +159,8 @@ private:
     int32 ModifyIncomingDamage(int32 Damage, const FUnitState& Defender) const;
     void ProcessTurnStartStatuses(FUnitState& Unit, bool bIsPlayer);
     void HealPlayer(int32 Value);
+    int32 GetPrimaryEnemyIndex() const;
+    bool HasAliveEnemies() const;
+    void SyncPrimaryEnemyToArray();
+    void SyncPrimaryEnemyFromArray();
 };

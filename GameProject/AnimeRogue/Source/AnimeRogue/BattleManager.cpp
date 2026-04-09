@@ -21,12 +21,55 @@ ABattleManager::ABattleManager()
     };
 }
 
+void ABattleManager::ConfigureEncounter(const TArray<FName>& EnemyIds)
+{
+    EnemyUnits.Reset();
+
+    TArray<FName> LocalIds = EnemyIds;
+    if (LocalIds.IsEmpty())
+    {
+        LocalIds.Add("enemy_slime_a");
+    }
+
+    for (const FName EnemyId : LocalIds)
+    {
+        FEnemyRuntimeState Enemy;
+        Enemy.EnemyId = EnemyId;
+        Enemy.State.MaxHP = EnemyStartHP;
+        Enemy.State.HP = EnemyStartHP;
+        Enemy.State.Block = 0;
+        Enemy.IntentScriptId = EnemyIntentScriptId;
+        Enemy.IntentIndex = 0;
+
+        if (EnemyDataTable)
+        {
+            if (const FEnemyDataRow* Row = EnemyDataTable->FindRow<FEnemyDataRow>(EnemyId, TEXT("ConfigureEncounter")))
+            {
+                Enemy.State.MaxHP = FMath::Max(1, Row->HpMax);
+                Enemy.State.HP = Enemy.State.MaxHP;
+                if (!Row->IntentPattern.IsEmpty())
+                {
+                    Row->IntentPattern.ParseIntoArray(Enemy.IntentSequence, TEXT("|"), true);
+                }
+            }
+        }
+
+        if (Enemy.IntentSequence.IsEmpty())
+        {
+            LoadIntentSequenceForEnemy(Enemy);
+        }
+
+        EnemyUnits.Add(Enemy);
+    }
+
+    SyncPrimaryEnemyFromArray();
+}
+
 void ABattleManager::StartBattle()
 {
     CurrentPhase = EBattlePhase::BattleStart;
     BattleLog.Reset();
     InitializeBattleStates();
-    LoadEnemyIntentSequence();
     CardSystem->SetCardDataTable(CardDataTable);
     CardSystem->InitializeDeck(StarterDeck);
     AddBattleLog(TEXT("Battle started."));
@@ -108,6 +151,7 @@ void ABattleManager::EnterPlayerTurnStart()
     ProcessTurnStartStatuses(PlayerState, true);
     CardSystem->DrawCards(DrawPerTurn);
     CurrentEnemyIntent = ResolveCurrentEnemyIntent();
+    SyncPrimaryEnemyToArray();
     AddBattleLog(FString::Printf(TEXT("Player turn start. Energy=%d, EnemyIntent=%s"), CurrentEnergy, *CurrentEnemyIntent));
     CurrentPhase = EBattlePhase::PlayerMain;
 }
@@ -122,6 +166,7 @@ void ABattleManager::EnterEnemyTurn()
     const FString IntentToken = ResolveCurrentEnemyIntent();
     ExecuteEnemyIntent(IntentToken);
     EnemyIntentIndex += 1;
+    SyncPrimaryEnemyToArray();
 
     CurrentPhase = EBattlePhase::EnemyTurnEnd;
 
@@ -129,6 +174,13 @@ void ABattleManager::EnterEnemyTurn()
     {
         AddBattleLog(TEXT("Player defeated."));
         CompleteBattle(false);
+        return;
+    }
+
+    if (!HasAliveEnemies())
+    {
+        AddBattleLog(TEXT("All enemies defeated."));
+        CompleteBattle(true);
         return;
     }
 
@@ -173,49 +225,64 @@ void ABattleManager::InitializeBattleStates()
     PlayerState.MaxHP = PlayerStartHP;
     PlayerState.HP = PlayerStartHP;
     PlayerState.Block = 0;
+    PlayerState.StatusStacks.Reset();
 
-    EnemyState.MaxHP = EnemyStartHP;
-    EnemyState.HP = EnemyStartHP;
-    EnemyState.Block = 0;
+    if (EnemyUnits.IsEmpty())
+    {
+        ConfigureEncounter({});
+    }
+
+    SyncPrimaryEnemyFromArray();
 }
 
 void ABattleManager::LoadEnemyIntentSequence()
 {
-    EnemyIntentSequence.Reset();
+    EnemyIntentSequence = { TEXT("atk6"), TEXT("atk6"), TEXT("def5") };
     EnemyIntentIndex = 0;
+}
+
+void ABattleManager::LoadIntentSequenceForEnemy(FEnemyRuntimeState& EnemyUnit)
+{
+    EnemyUnit.IntentSequence.Reset();
+    EnemyUnit.IntentIndex = 0;
 
     if (!EnemyIntentScriptTable)
     {
-        EnemyIntentSequence = { TEXT("atk6"), TEXT("atk6"), TEXT("def5") };
+        EnemyUnit.IntentSequence = { TEXT("atk6"), TEXT("atk6"), TEXT("def5") };
         return;
     }
 
-    const FEnemyIntentScriptRow* Row = EnemyIntentScriptTable->FindRow<FEnemyIntentScriptRow>(
-        EnemyIntentScriptId,
-        TEXT("LoadEnemyIntentSequence")
-    );
+    const FName ScriptId = EnemyUnit.IntentScriptId.IsNone() ? EnemyIntentScriptId : EnemyUnit.IntentScriptId;
+    const FEnemyIntentScriptRow* Row = EnemyIntentScriptTable->FindRow<FEnemyIntentScriptRow>(ScriptId, TEXT("LoadIntentSequenceForEnemy"));
     if (!Row || Row->Pattern.IsEmpty())
     {
-        EnemyIntentSequence = { TEXT("atk6"), TEXT("atk6"), TEXT("def5") };
+        EnemyUnit.IntentSequence = { TEXT("atk6"), TEXT("atk6"), TEXT("def5") };
         return;
     }
 
-    Row->Pattern.ParseIntoArray(EnemyIntentSequence, TEXT("|"), true);
-    if (EnemyIntentSequence.IsEmpty())
+    Row->Pattern.ParseIntoArray(EnemyUnit.IntentSequence, TEXT("|"), true);
+    if (EnemyUnit.IntentSequence.IsEmpty())
     {
-        EnemyIntentSequence = { TEXT("atk6"), TEXT("atk6"), TEXT("def5") };
+        EnemyUnit.IntentSequence = { TEXT("atk6"), TEXT("atk6"), TEXT("def5") };
     }
 }
 
 FString ABattleManager::ResolveCurrentEnemyIntent() const
 {
-    if (EnemyIntentSequence.IsEmpty())
+    const int32 PrimaryIdx = GetPrimaryEnemyIndex();
+    if (!EnemyUnits.IsValidIndex(PrimaryIdx))
     {
         return TEXT("atk6");
     }
 
-    const int32 SafeIndex = EnemyIntentIndex % EnemyIntentSequence.Num();
-    return EnemyIntentSequence[SafeIndex];
+    const FEnemyRuntimeState& Enemy = EnemyUnits[PrimaryIdx];
+    if (Enemy.IntentSequence.IsEmpty())
+    {
+        return TEXT("atk6");
+    }
+
+    const int32 SafeIndex = Enemy.IntentIndex % Enemy.IntentSequence.Num();
+    return Enemy.IntentSequence[SafeIndex];
 }
 
 void ABattleManager::ExecuteEnemyIntent(const FString& IntentToken)
@@ -226,6 +293,7 @@ void ABattleManager::ExecuteEnemyIntent(const FString& IntentToken)
         const int32 FinalDamage = ModifyOutgoingDamage(Damage, EnemyState, false);
         ApplyDamageToPlayer(FinalDamage);
         AddBattleLog(FString::Printf(TEXT("Enemy uses %s, deals %d damage."), *IntentToken, FinalDamage));
+
         const int32 Thorns = GetStatusStack(PlayerState, FName(TEXT("Thorns")));
         if (Thorns > 0)
         {
@@ -247,6 +315,7 @@ void ABattleManager::ExecuteEnemyIntent(const FString& IntentToken)
     {
         const int32 Delta = FCString::Atoi(*IntentToken.RightChop(8));
         AddStatusStack(EnemyState, FName(TEXT("Strength")), FMath::Max(1, Delta));
+        SyncPrimaryEnemyToArray();
         AddBattleLog(FString::Printf(TEXT("Enemy gains %d Strength."), FMath::Max(1, Delta)));
         return;
     }
@@ -305,6 +374,7 @@ void ABattleManager::ApplyDamageToEnemy(int32 Damage)
     EnemyState.Block -= BlockAbsorb;
     const int32 FinalDamage = Damage - BlockAbsorb;
     EnemyState.HP = FMath::Max(0, EnemyState.HP - FinalDamage);
+    SyncPrimaryEnemyToArray();
 }
 
 void ABattleManager::GainPlayerBlock(const int32 BlockValue)
@@ -328,8 +398,8 @@ void ABattleManager::GainEnemyBlock(const int32 BlockValue)
     {
         return;
     }
-
     EnemyState.Block += BlockValue;
+    SyncPrimaryEnemyToArray();
 }
 
 void ABattleManager::ApplyCardEffectById(const FName& CardId)
@@ -372,6 +442,7 @@ void ABattleManager::ApplyCardEffectById(const FName& CardId)
         const int32 FinalDamage = ModifyOutgoingDamage(Value, PlayerState, true);
         ApplyDamageToEnemy(FinalDamage);
         AddStatusStack(EnemyState, FName(TEXT("Bleed")), 2);
+        SyncPrimaryEnemyToArray();
         AddBattleLog(FString::Printf(TEXT("Play %s: deal %d and apply 2 Bleed."), *CardId.ToString(), FinalDamage));
     }
     else if (EffectId == "effect_gain_block_and_thorns")
@@ -424,11 +495,11 @@ void ABattleManager::ApplyCardEffectById(const FName& CardId)
     }
     else
     {
-        // Fallback behavior keeps prototype playable while effect scripts are still expanding.
         if (Card->CardType == ECardType::Attack)
         {
-            ApplyDamageToEnemy(Value);
-            AddBattleLog(FString::Printf(TEXT("Play %s: fallback attack %d damage."), *CardId.ToString(), Value));
+            const int32 FinalDamage = ModifyOutgoingDamage(Value, PlayerState, true);
+            ApplyDamageToEnemy(FinalDamage);
+            AddBattleLog(FString::Printf(TEXT("Play %s: fallback attack %d damage."), *CardId.ToString(), FinalDamage));
         }
         else if (Card->CardType == ECardType::Skill)
         {
@@ -444,7 +515,11 @@ void ABattleManager::ApplyCardEffectById(const FName& CardId)
     if (EnemyState.HP <= 0)
     {
         AddBattleLog(TEXT("Enemy defeated."));
-        CompleteBattle(true);
+        SyncPrimaryEnemyToArray();
+        if (!HasAliveEnemies())
+        {
+            CompleteBattle(true);
+        }
     }
 }
 
@@ -454,7 +529,6 @@ const FCardData* ABattleManager::FindCardData(const FName& CardId) const
     {
         return nullptr;
     }
-
     return CardDataTable->FindRow<FCardData>(CardId, TEXT("FindCardData"));
 }
 
@@ -484,7 +558,6 @@ void ABattleManager::ApplyBattleSaveData(const FBattleSaveData& InData)
     EnemyState = InData.EnemyState;
     EnemyIntentScriptId = InData.EnemyIntentScriptId;
     EnemyIntentIndex = FMath::Max(0, InData.EnemyIntentIndex);
-
     LoadEnemyIntentSequence();
     CurrentEnemyIntent = InData.CurrentEnemyIntent.IsEmpty() ? ResolveCurrentEnemyIntent() : InData.CurrentEnemyIntent;
     if (CardSystem)
@@ -493,6 +566,7 @@ void ABattleManager::ApplyBattleSaveData(const FBattleSaveData& InData)
         CardSystem->ApplySaveData(InData.CardSystem);
     }
 
+    SyncPrimaryEnemyToArray();
     AddBattleLog(TEXT("Battle snapshot restored."));
 }
 
@@ -508,15 +582,16 @@ void ABattleManager::AddStatusStack(FUnitState& Unit, const FName StatusId, cons
     {
         return;
     }
-
     const int32 Current = GetStatusStack(Unit, StatusId);
     const int32 Next = FMath::Max(0, Current + Delta);
     if (Next <= 0)
     {
         Unit.StatusStacks.Remove(StatusId);
-        return;
     }
-    Unit.StatusStacks.Add(StatusId, Next);
+    else
+    {
+        Unit.StatusStacks.Add(StatusId, Next);
+    }
 }
 
 void ABattleManager::DecayStatus(FUnitState& Unit, const FName StatusId, const int32 DecayValue)
@@ -589,6 +664,57 @@ void ABattleManager::HealPlayer(const int32 Value)
     {
         return;
     }
-
     PlayerState.HP = FMath::Min(PlayerState.MaxHP, PlayerState.HP + Value);
+}
+
+int32 ABattleManager::GetPrimaryEnemyIndex() const
+{
+    for (int32 i = 0; i < EnemyUnits.Num(); ++i)
+    {
+        if (EnemyUnits[i].State.HP > 0)
+        {
+            return i;
+        }
+    }
+    return 0;
+}
+
+bool ABattleManager::HasAliveEnemies() const
+{
+    for (const FEnemyRuntimeState& Enemy : EnemyUnits)
+    {
+        if (Enemy.State.HP > 0)
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
+void ABattleManager::SyncPrimaryEnemyToArray()
+{
+    const int32 PrimaryIdx = GetPrimaryEnemyIndex();
+    if (!EnemyUnits.IsValidIndex(PrimaryIdx))
+    {
+        return;
+    }
+
+    EnemyUnits[PrimaryIdx].State = EnemyState;
+    EnemyUnits[PrimaryIdx].CurrentIntent = CurrentEnemyIntent;
+    EnemyUnits[PrimaryIdx].IntentIndex = EnemyIntentIndex;
+}
+
+void ABattleManager::SyncPrimaryEnemyFromArray()
+{
+    const int32 PrimaryIdx = GetPrimaryEnemyIndex();
+    if (!EnemyUnits.IsValidIndex(PrimaryIdx))
+    {
+        return;
+    }
+
+    EnemyState = EnemyUnits[PrimaryIdx].State;
+    EnemyIntentScriptId = EnemyUnits[PrimaryIdx].IntentScriptId;
+    EnemyIntentIndex = EnemyUnits[PrimaryIdx].IntentIndex;
+    EnemyIntentSequence = EnemyUnits[PrimaryIdx].IntentSequence;
+    CurrentEnemyIntent = EnemyUnits[PrimaryIdx].CurrentIntent;
 }

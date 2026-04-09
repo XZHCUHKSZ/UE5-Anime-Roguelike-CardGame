@@ -171,6 +171,48 @@ struct FEnemyIntentScriptRow : public FTableRowBase
 };
 
 USTRUCT(BlueprintType)
+struct FEnemyDataRow : public FTableRowBase
+{
+    GENERATED_BODY()
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly)
+    FName EnemyId = NAME_None;
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly)
+    FText Name;
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly)
+    int32 HpMax = 30;
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly)
+    FString IntentPattern;
+};
+
+USTRUCT(BlueprintType)
+struct FEnemyRuntimeState
+{
+    GENERATED_BODY()
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    FName EnemyId = NAME_None;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    FUnitState State;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    FName IntentScriptId = NAME_None;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    int32 IntentIndex = 0;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    FString CurrentIntent;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    TArray<FString> IntentSequence;
+};
+
+USTRUCT(BlueprintType)
 struct FEventDataRow : public FTableRowBase
 {
     GENERATED_BODY()
