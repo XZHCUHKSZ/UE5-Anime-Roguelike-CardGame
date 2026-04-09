@@ -284,6 +284,35 @@ bool ARunManager::ExecuteEventScript(const FName EventScriptId)
     return false;
 }
 
+FRunSaveData ARunManager::BuildRunSaveData() const
+{
+    FRunSaveData Data;
+    Data.bRunActive = bRunActive;
+    Data.RunSeed = RunSeed;
+    Data.Gold = Gold;
+    Data.CurrentHP = CurrentHP;
+    Data.MaxHP = MaxHP;
+    Data.CurrentNode = CurrentNode;
+    Data.DeckCardIds = DeckCardIds;
+    Data.RelicIds = RelicIds;
+    return Data;
+}
+
+void ARunManager::ApplyRunSaveData(const FRunSaveData& InData)
+{
+    bRunActive = InData.bRunActive;
+    RunSeed = InData.RunSeed;
+    Gold = InData.Gold;
+    CurrentHP = FMath::Max(0, InData.CurrentHP);
+    MaxHP = FMath::Max(1, InData.MaxHP);
+    CurrentNode = InData.CurrentNode;
+    DeckCardIds = InData.DeckCardIds;
+    RelicIds = InData.RelicIds;
+
+    OnNodeAdvanced.Broadcast(CurrentNode);
+    AddRunLog(FString::Printf(TEXT("Run loaded. Seed=%d, HP=%d/%d, Gold=%d"), RunSeed, CurrentHP, MaxHP, Gold));
+}
+
 EMapNodeType ARunManager::ResolveNodeTypeByFloor(const int32 Floor) const
 {
     if (Floor >= MaxFloors)

@@ -79,6 +79,12 @@ public:
     UFUNCTION(BlueprintCallable)
     bool ExecuteEventScript(FName EventScriptId);
 
+    UFUNCTION(BlueprintPure)
+    FRunSaveData BuildRunSaveData() const;
+
+    UFUNCTION(BlueprintCallable)
+    void ApplyRunSaveData(const FRunSaveData& InData);
+
     UPROPERTY(BlueprintAssignable)
     FOnNodeAdvanced OnNodeAdvanced;
 

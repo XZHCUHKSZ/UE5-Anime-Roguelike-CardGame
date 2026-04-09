@@ -226,3 +226,51 @@ struct FShopCardOffer
     UPROPERTY(EditAnywhere, BlueprintReadWrite)
     int32 Price = 0;
 };
+
+USTRUCT(BlueprintType)
+struct FRunSaveData
+{
+    GENERATED_BODY()
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    bool bRunActive = false;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    int32 RunSeed = 0;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    int32 Gold = 0;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    int32 CurrentHP = 1;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    int32 MaxHP = 1;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    FMapNodeData CurrentNode;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    TArray<FName> DeckCardIds;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    TArray<FName> RelicIds;
+};
+
+USTRUCT(BlueprintType)
+struct FMetaSaveData
+{
+    GENERATED_BODY()
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    int32 TotalRuns = 0;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    int32 TotalWins = 0;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    int32 AscensionLevel = 0;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    TArray<FName> UnlockedCharacters;
+};
