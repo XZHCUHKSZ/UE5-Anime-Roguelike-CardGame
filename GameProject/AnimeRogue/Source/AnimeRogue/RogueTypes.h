@@ -53,6 +53,18 @@ enum class EMapNodeType : uint8
     Boss
 };
 
+UENUM(BlueprintType)
+enum class ENodeFlowState : uint8
+{
+    Idle,
+    EnteringNode,
+    InBattle,
+    InEvent,
+    InShop,
+    InRest,
+    RunComplete
+};
+
 USTRUCT(BlueprintType)
 struct FCardData : public FTableRowBase
 {

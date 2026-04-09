@@ -284,6 +284,12 @@ bool ARunManager::ExecuteEventScript(const FName EventScriptId)
     return false;
 }
 
+void ARunManager::FinishRun(const bool bWon)
+{
+    bRunActive = false;
+    AddRunLog(bWon ? TEXT("Run complete: victory.") : TEXT("Run complete: defeated."));
+}
+
 FRunSaveData ARunManager::BuildRunSaveData() const
 {
     FRunSaveData Data;

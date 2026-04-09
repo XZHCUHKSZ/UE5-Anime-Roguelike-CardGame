@@ -79,6 +79,9 @@ public:
     UFUNCTION(BlueprintCallable)
     bool ExecuteEventScript(FName EventScriptId);
 
+    UFUNCTION(BlueprintCallable)
+    void FinishRun(bool bWon);
+
     UFUNCTION(BlueprintPure)
     FRunSaveData BuildRunSaveData() const;
 
