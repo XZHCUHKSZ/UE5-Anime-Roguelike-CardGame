@@ -42,6 +42,17 @@ bool AEventManager::ChooseOption(const int32 OptionIndex, ARunManager* RunManage
     return bOk;
 }
 
+void AEventManager::SetCurrentEvent(const FResolvedEventData& InEvent)
+{
+    CurrentEvent = InEvent;
+    OnEventRolled.Broadcast(CurrentEvent);
+}
+
+void AEventManager::ClearCurrentEvent()
+{
+    CurrentEvent = {};
+}
+
 bool AEventManager::ResolveEventFromRowName(const FName& RowName)
 {
     if (!EventDataTable)

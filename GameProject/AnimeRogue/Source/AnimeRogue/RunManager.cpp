@@ -45,6 +45,10 @@ void ARunManager::StartRun(const int32 Seed)
 
     DeckCardIds = StarterDeck;
     RelicIds.Reset();
+    bHasPendingEvent = false;
+    PendingEvent = {};
+    bHasPendingShop = false;
+    PendingShopOffers.Reset();
     RunLog.Reset();
 
     CurrentNode = {};
@@ -287,7 +291,35 @@ bool ARunManager::ExecuteEventScript(const FName EventScriptId)
 void ARunManager::FinishRun(const bool bWon)
 {
     bRunActive = false;
+    bHasPendingEvent = false;
+    PendingEvent = {};
+    bHasPendingShop = false;
+    PendingShopOffers.Reset();
     AddRunLog(bWon ? TEXT("Run complete: victory.") : TEXT("Run complete: defeated."));
+}
+
+void ARunManager::SetPendingEvent(const FResolvedEventData& EventData)
+{
+    PendingEvent = EventData;
+    bHasPendingEvent = true;
+}
+
+void ARunManager::ClearPendingEvent()
+{
+    PendingEvent = {};
+    bHasPendingEvent = false;
+}
+
+void ARunManager::SetPendingShopOffers(const TArray<FShopCardOffer>& InOffers)
+{
+    PendingShopOffers = InOffers;
+    bHasPendingShop = !PendingShopOffers.IsEmpty();
+}
+
+void ARunManager::ClearPendingShopOffers()
+{
+    PendingShopOffers.Reset();
+    bHasPendingShop = false;
 }
 
 FRunSaveData ARunManager::BuildRunSaveData() const
@@ -301,6 +333,10 @@ FRunSaveData ARunManager::BuildRunSaveData() const
     Data.CurrentNode = CurrentNode;
     Data.DeckCardIds = DeckCardIds;
     Data.RelicIds = RelicIds;
+    Data.bHasPendingEvent = bHasPendingEvent;
+    Data.PendingEvent = PendingEvent;
+    Data.bHasPendingShop = bHasPendingShop;
+    Data.PendingShopOffers = PendingShopOffers;
     return Data;
 }
 
@@ -314,6 +350,10 @@ void ARunManager::ApplyRunSaveData(const FRunSaveData& InData)
     CurrentNode = InData.CurrentNode;
     DeckCardIds = InData.DeckCardIds;
     RelicIds = InData.RelicIds;
+    bHasPendingEvent = InData.bHasPendingEvent;
+    PendingEvent = InData.PendingEvent;
+    bHasPendingShop = InData.bHasPendingShop;
+    PendingShopOffers = InData.PendingShopOffers;
 
     OnNodeAdvanced.Broadcast(CurrentNode);
     AddRunLog(FString::Printf(TEXT("Run loaded. Seed=%d, HP=%d/%d, Gold=%d"), RunSeed, CurrentHP, MaxHP, Gold));

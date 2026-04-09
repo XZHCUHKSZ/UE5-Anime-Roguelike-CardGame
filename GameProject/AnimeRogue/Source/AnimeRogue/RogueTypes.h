@@ -267,6 +267,18 @@ struct FRunSaveData
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite)
     TArray<FName> RelicIds;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    bool bHasPendingEvent = false;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    FResolvedEventData PendingEvent;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    bool bHasPendingShop = false;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    TArray<FShopCardOffer> PendingShopOffers;
 };
 
 USTRUCT(BlueprintType)

@@ -78,3 +78,15 @@ bool AShopManager::RemoveCardService(const int32 DeckIndex, ARunManager* RunMana
 
     return RunManager->RemoveCardAtShop(DeckIndex);
 }
+
+void AShopManager::SetCurrentOffers(const TArray<FShopCardOffer>& InOffers)
+{
+    CurrentOffers = InOffers;
+    OnShopRefreshed.Broadcast(CurrentOffers);
+}
+
+void AShopManager::ClearCurrentOffers()
+{
+    CurrentOffers.Reset();
+    OnShopRefreshed.Broadcast(CurrentOffers);
+}

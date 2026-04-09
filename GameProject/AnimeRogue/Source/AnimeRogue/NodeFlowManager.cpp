@@ -92,6 +92,8 @@ bool ANodeFlowManager::ResolveEventAndAdvance(const int32 OptionIndex)
     {
         return false;
     }
+    RunManager->ClearPendingEvent();
+    EventManager->ClearCurrentEvent();
     const bool bAdvanced = AdvanceToNextNodeOrComplete();
     AutoSaveIfEnabled();
     return bAdvanced;
@@ -102,6 +104,15 @@ bool ANodeFlowManager::LeaveShopAndAdvance()
     if (FlowState != ENodeFlowState::InShop)
     {
         return false;
+    }
+
+    if (RunManager)
+    {
+        RunManager->ClearPendingShopOffers();
+    }
+    if (ShopManager)
+    {
+        ShopManager->ClearCurrentOffers();
     }
 
     const bool bAdvanced = AdvanceToNextNodeOrComplete();
@@ -140,9 +151,22 @@ bool ANodeFlowManager::EnterCurrentNode()
         SetFlowState(ENodeFlowState::InBattle);
         return true;
     case EMapNodeType::Event:
-        if (!EventManager || !EventManager->RollRandomEvent())
+        if (!EventManager)
         {
             return false;
+        }
+
+        if (RunManager->HasPendingEvent())
+        {
+            EventManager->SetCurrentEvent(RunManager->GetPendingEvent());
+        }
+        else
+        {
+            if (!EventManager->RollRandomEvent())
+            {
+                return false;
+            }
+            RunManager->SetPendingEvent(EventManager->GetCurrentEvent());
         }
         SetFlowState(ENodeFlowState::InEvent);
         return true;
@@ -151,7 +175,16 @@ bool ANodeFlowManager::EnterCurrentNode()
         {
             return false;
         }
-        ShopManager->GenerateShop(RunManager);
+
+        if (RunManager->HasPendingShopOffers())
+        {
+            ShopManager->SetCurrentOffers(RunManager->GetPendingShopOffers());
+        }
+        else
+        {
+            ShopManager->GenerateShop(RunManager);
+            RunManager->SetPendingShopOffers(ShopManager->GetCurrentOffers());
+        }
         SetFlowState(ENodeFlowState::InShop);
         return true;
     case EMapNodeType::Rest:

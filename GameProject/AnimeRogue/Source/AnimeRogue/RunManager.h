@@ -82,6 +82,30 @@ public:
     UFUNCTION(BlueprintCallable)
     void FinishRun(bool bWon);
 
+    UFUNCTION(BlueprintCallable)
+    void SetPendingEvent(const FResolvedEventData& EventData);
+
+    UFUNCTION(BlueprintCallable)
+    void ClearPendingEvent();
+
+    UFUNCTION(BlueprintPure)
+    bool HasPendingEvent() const { return bHasPendingEvent; }
+
+    UFUNCTION(BlueprintPure)
+    FResolvedEventData GetPendingEvent() const { return PendingEvent; }
+
+    UFUNCTION(BlueprintCallable)
+    void SetPendingShopOffers(const TArray<FShopCardOffer>& InOffers);
+
+    UFUNCTION(BlueprintCallable)
+    void ClearPendingShopOffers();
+
+    UFUNCTION(BlueprintPure)
+    bool HasPendingShopOffers() const { return bHasPendingShop; }
+
+    UFUNCTION(BlueprintPure)
+    TArray<FShopCardOffer> GetPendingShopOffers() const { return PendingShopOffers; }
+
     UFUNCTION(BlueprintPure)
     FRunSaveData BuildRunSaveData() const;
 
@@ -142,6 +166,18 @@ protected:
 
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Run")
     TArray<FString> RunLog;
+
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Run")
+    bool bHasPendingEvent = false;
+
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Run")
+    FResolvedEventData PendingEvent;
+
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Run")
+    bool bHasPendingShop = false;
+
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Run")
+    TArray<FShopCardOffer> PendingShopOffers;
 
 private:
     EMapNodeType ResolveNodeTypeByFloor(int32 Floor) const;

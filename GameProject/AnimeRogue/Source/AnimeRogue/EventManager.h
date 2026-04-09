@@ -27,6 +27,12 @@ public:
     UFUNCTION(BlueprintPure)
     FResolvedEventData GetCurrentEvent() const { return CurrentEvent; }
 
+    UFUNCTION(BlueprintCallable)
+    void SetCurrentEvent(const FResolvedEventData& InEvent);
+
+    UFUNCTION(BlueprintCallable)
+    void ClearCurrentEvent();
+
     UPROPERTY(BlueprintAssignable)
     FOnEventRolled OnEventRolled;
 

@@ -32,6 +32,12 @@ public:
     UFUNCTION(BlueprintPure)
     TArray<FShopCardOffer> GetCurrentOffers() const { return CurrentOffers; }
 
+    UFUNCTION(BlueprintCallable)
+    void SetCurrentOffers(const TArray<FShopCardOffer>& InOffers);
+
+    UFUNCTION(BlueprintCallable)
+    void ClearCurrentOffers();
+
     UPROPERTY(BlueprintAssignable)
     FOnShopRefreshed OnShopRefreshed;
 
