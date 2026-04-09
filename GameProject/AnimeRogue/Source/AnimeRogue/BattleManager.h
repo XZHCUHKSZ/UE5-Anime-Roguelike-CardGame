@@ -136,6 +136,14 @@ private:
     void ApplyDamageToPlayer(int32 Damage);
     void ApplyDamageToEnemy(int32 Damage);
     void GainPlayerBlock(int32 BlockValue);
+    void GainEnemyBlock(int32 BlockValue);
     void ApplyCardEffectById(const FName& CardId);
     const FCardData* FindCardData(const FName& CardId) const;
+    int32 GetStatusStack(const FUnitState& Unit, FName StatusId) const;
+    void AddStatusStack(FUnitState& Unit, FName StatusId, int32 Delta);
+    void DecayStatus(FUnitState& Unit, FName StatusId, int32 DecayValue = 1);
+    int32 ModifyOutgoingDamage(int32 BaseDamage, const FUnitState& Attacker, bool bConsumeNextAttackBonus);
+    int32 ModifyIncomingDamage(int32 Damage, const FUnitState& Defender) const;
+    void ProcessTurnStartStatuses(FUnitState& Unit, bool bIsPlayer);
+    void HealPlayer(int32 Value);
 };

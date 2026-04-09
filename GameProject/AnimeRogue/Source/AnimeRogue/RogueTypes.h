@@ -126,6 +126,9 @@ struct FUnitState
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite)
     int32 Block = 0;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    TMap<FName, int32> StatusStacks;
 };
 
 USTRUCT(BlueprintType)

@@ -105,6 +105,7 @@ void ABattleManager::EnterPlayerTurnStart()
     CurrentPhase = EBattlePhase::PlayerTurnStart;
     CurrentEnergy = EnergyPerTurn;
     PlayerState.Block = 0;
+    ProcessTurnStartStatuses(PlayerState, true);
     CardSystem->DrawCards(DrawPerTurn);
     CurrentEnemyIntent = ResolveCurrentEnemyIntent();
     AddBattleLog(FString::Printf(TEXT("Player turn start. Energy=%d, EnemyIntent=%s"), CurrentEnergy, *CurrentEnemyIntent));
@@ -114,6 +115,8 @@ void ABattleManager::EnterPlayerTurnStart()
 void ABattleManager::EnterEnemyTurn()
 {
     CurrentPhase = EBattlePhase::EnemyTurnStart;
+    EnemyState.Block = 0;
+    ProcessTurnStartStatuses(EnemyState, false);
     CurrentPhase = EBattlePhase::EnemyMain;
 
     const FString IntentToken = ResolveCurrentEnemyIntent();
@@ -220,16 +223,47 @@ void ABattleManager::ExecuteEnemyIntent(const FString& IntentToken)
     if (IntentToken.StartsWith(TEXT("atk")))
     {
         const int32 Damage = FCString::Atoi(*IntentToken.RightChop(3));
-        ApplyDamageToPlayer(Damage);
-        AddBattleLog(FString::Printf(TEXT("Enemy uses %s, deals %d damage."), *IntentToken, Damage));
+        const int32 FinalDamage = ModifyOutgoingDamage(Damage, EnemyState, false);
+        ApplyDamageToPlayer(FinalDamage);
+        AddBattleLog(FString::Printf(TEXT("Enemy uses %s, deals %d damage."), *IntentToken, FinalDamage));
+        const int32 Thorns = GetStatusStack(PlayerState, FName(TEXT("Thorns")));
+        if (Thorns > 0)
+        {
+            ApplyDamageToEnemy(Thorns);
+            AddBattleLog(FString::Printf(TEXT("Player Thorns reflects %d damage."), Thorns));
+        }
         return;
     }
 
     if (IntentToken.StartsWith(TEXT("def")))
     {
         const int32 BlockValue = FCString::Atoi(*IntentToken.RightChop(3));
-        EnemyState.Block += BlockValue;
+        GainEnemyBlock(BlockValue);
         AddBattleLog(FString::Printf(TEXT("Enemy uses %s, gains %d block."), *IntentToken, BlockValue));
+        return;
+    }
+
+    if (IntentToken.StartsWith(TEXT("buff_str")))
+    {
+        const int32 Delta = FCString::Atoi(*IntentToken.RightChop(8));
+        AddStatusStack(EnemyState, FName(TEXT("Strength")), FMath::Max(1, Delta));
+        AddBattleLog(FString::Printf(TEXT("Enemy gains %d Strength."), FMath::Max(1, Delta)));
+        return;
+    }
+
+    if (IntentToken.StartsWith(TEXT("debuff_weak")))
+    {
+        const int32 Delta = FCString::Atoi(*IntentToken.RightChop(11));
+        AddStatusStack(PlayerState, FName(TEXT("Weak")), FMath::Max(1, Delta));
+        AddBattleLog(FString::Printf(TEXT("Player gains %d Weak."), FMath::Max(1, Delta)));
+        return;
+    }
+
+    if (IntentToken.StartsWith(TEXT("debuff_frail")))
+    {
+        const int32 Delta = FCString::Atoi(*IntentToken.RightChop(12));
+        AddStatusStack(PlayerState, FName(TEXT("Frail")), FMath::Max(1, Delta));
+        AddBattleLog(FString::Printf(TEXT("Player gains %d Frail."), FMath::Max(1, Delta)));
         return;
     }
 
@@ -252,6 +286,7 @@ void ABattleManager::ApplyDamageToPlayer(int32 Damage)
         return;
     }
 
+    Damage = ModifyIncomingDamage(Damage, PlayerState);
     const int32 BlockAbsorb = FMath::Min(PlayerState.Block, Damage);
     PlayerState.Block -= BlockAbsorb;
     const int32 FinalDamage = Damage - BlockAbsorb;
@@ -265,6 +300,7 @@ void ABattleManager::ApplyDamageToEnemy(int32 Damage)
         return;
     }
 
+    Damage = ModifyIncomingDamage(Damage, EnemyState);
     const int32 BlockAbsorb = FMath::Min(EnemyState.Block, Damage);
     EnemyState.Block -= BlockAbsorb;
     const int32 FinalDamage = Damage - BlockAbsorb;
@@ -278,7 +314,22 @@ void ABattleManager::GainPlayerBlock(const int32 BlockValue)
         return;
     }
 
-    PlayerState.Block += BlockValue;
+    int32 FinalBlock = BlockValue;
+    if (GetStatusStack(PlayerState, FName(TEXT("Frail"))) > 0)
+    {
+        FinalBlock = FMath::Max(0, FMath::FloorToInt(static_cast<float>(BlockValue) * 0.75f));
+    }
+    PlayerState.Block += FinalBlock;
+}
+
+void ABattleManager::GainEnemyBlock(const int32 BlockValue)
+{
+    if (BlockValue <= 0)
+    {
+        return;
+    }
+
+    EnemyState.Block += BlockValue;
 }
 
 void ABattleManager::ApplyCardEffectById(const FName& CardId)
@@ -295,8 +346,16 @@ void ABattleManager::ApplyCardEffectById(const FName& CardId)
 
     if (EffectId == "effect_deal_damage" || EffectId == "effect_damage_if_played_after_attack" || EffectId == "effect_bonus_per_attack_this_turn")
     {
-        ApplyDamageToEnemy(Value);
-        AddBattleLog(FString::Printf(TEXT("Play %s: deal %d damage."), *CardId.ToString(), Value));
+        const int32 FinalDamage = ModifyOutgoingDamage(Value, PlayerState, true);
+        ApplyDamageToEnemy(FinalDamage);
+        AddBattleLog(FString::Printf(TEXT("Play %s: deal %d damage."), *CardId.ToString(), FinalDamage));
+    }
+    else if (EffectId == "effect_two_hit_damage")
+    {
+        const int32 HitDamage = ModifyOutgoingDamage(Value, PlayerState, true);
+        ApplyDamageToEnemy(HitDamage);
+        ApplyDamageToEnemy(HitDamage);
+        AddBattleLog(FString::Printf(TEXT("Play %s: two hits for %d each."), *CardId.ToString(), HitDamage));
     }
     else if (EffectId == "effect_gain_block")
     {
@@ -307,6 +366,61 @@ void ABattleManager::ApplyCardEffectById(const FName& CardId)
     {
         CardSystem->DrawCards(FMath::Max(1, Value));
         AddBattleLog(FString::Printf(TEXT("Play %s: draw %d card(s)."), *CardId.ToString(), FMath::Max(1, Value)));
+    }
+    else if (EffectId == "effect_apply_bleed_2")
+    {
+        const int32 FinalDamage = ModifyOutgoingDamage(Value, PlayerState, true);
+        ApplyDamageToEnemy(FinalDamage);
+        AddStatusStack(EnemyState, FName(TEXT("Bleed")), 2);
+        AddBattleLog(FString::Printf(TEXT("Play %s: deal %d and apply 2 Bleed."), *CardId.ToString(), FinalDamage));
+    }
+    else if (EffectId == "effect_gain_block_and_thorns")
+    {
+        GainPlayerBlock(Value);
+        AddStatusStack(PlayerState, FName(TEXT("Thorns")), 1);
+        AddBattleLog(FString::Printf(TEXT("Play %s: gain block and 1 Thorns."), *CardId.ToString()));
+    }
+    else if (EffectId == "effect_gain_1_energy")
+    {
+        CurrentEnergy += 1;
+        AddBattleLog(FString::Printf(TEXT("Play %s: gain 1 energy."), *CardId.ToString()));
+    }
+    else if (EffectId == "effect_discard_draw")
+    {
+        CardSystem->DrawCards(1);
+        AddBattleLog(FString::Printf(TEXT("Play %s: cycle 1 card."), *CardId.ToString()));
+    }
+    else if (EffectId == "effect_next_attack_plus_damage")
+    {
+        AddStatusStack(PlayerState, FName(TEXT("NextAttackBonus")), Value);
+        AddBattleLog(FString::Printf(TEXT("Play %s: next attack +%d damage."), *CardId.ToString(), Value));
+    }
+    else if (EffectId == "effect_bonus_vs_block")
+    {
+        int32 Damage = Value;
+        if (EnemyState.Block > 0)
+        {
+            Damage += 4;
+        }
+        Damage = ModifyOutgoingDamage(Damage, PlayerState, true);
+        ApplyDamageToEnemy(Damage);
+        AddBattleLog(FString::Printf(TEXT("Play %s: deal %d (bonus vs block)."), *CardId.ToString(), Damage));
+    }
+    else if (EffectId == "effect_heal_small")
+    {
+        HealPlayer(FMath::Max(1, Value));
+        AddBattleLog(FString::Printf(TEXT("Play %s: heal %d."), *CardId.ToString(), FMath::Max(1, Value)));
+    }
+    else if (EffectId == "effect_signature_execute")
+    {
+        int32 Damage = Value;
+        if (EnemyState.HP * 10 <= EnemyState.MaxHP * 4)
+        {
+            Damage += 10;
+        }
+        Damage = ModifyOutgoingDamage(Damage, PlayerState, true);
+        ApplyDamageToEnemy(Damage);
+        AddBattleLog(FString::Printf(TEXT("Play %s: signature hit %d."), *CardId.ToString(), Damage));
     }
     else
     {
@@ -380,4 +494,101 @@ void ABattleManager::ApplyBattleSaveData(const FBattleSaveData& InData)
     }
 
     AddBattleLog(TEXT("Battle snapshot restored."));
+}
+
+int32 ABattleManager::GetStatusStack(const FUnitState& Unit, const FName StatusId) const
+{
+    const int32* Value = Unit.StatusStacks.Find(StatusId);
+    return Value ? *Value : 0;
+}
+
+void ABattleManager::AddStatusStack(FUnitState& Unit, const FName StatusId, const int32 Delta)
+{
+    if (Delta == 0 || StatusId.IsNone())
+    {
+        return;
+    }
+
+    const int32 Current = GetStatusStack(Unit, StatusId);
+    const int32 Next = FMath::Max(0, Current + Delta);
+    if (Next <= 0)
+    {
+        Unit.StatusStacks.Remove(StatusId);
+        return;
+    }
+    Unit.StatusStacks.Add(StatusId, Next);
+}
+
+void ABattleManager::DecayStatus(FUnitState& Unit, const FName StatusId, const int32 DecayValue)
+{
+    if (DecayValue <= 0)
+    {
+        return;
+    }
+    AddStatusStack(Unit, StatusId, -DecayValue);
+}
+
+int32 ABattleManager::ModifyOutgoingDamage(int32 BaseDamage, const FUnitState& Attacker, const bool bConsumeNextAttackBonus)
+{
+    int32 Result = BaseDamage;
+    Result += GetStatusStack(Attacker, FName(TEXT("Strength")));
+
+    if (GetStatusStack(Attacker, FName(TEXT("Weak"))) > 0)
+    {
+        Result = FMath::Max(1, FMath::FloorToInt(static_cast<float>(Result) * 0.75f));
+    }
+
+    if (bConsumeNextAttackBonus)
+    {
+        const int32 NextBonus = GetStatusStack(PlayerState, FName(TEXT("NextAttackBonus")));
+        if (NextBonus > 0)
+        {
+            Result += NextBonus;
+            PlayerState.StatusStacks.Remove(FName(TEXT("NextAttackBonus")));
+        }
+    }
+
+    return FMath::Max(0, Result);
+}
+
+int32 ABattleManager::ModifyIncomingDamage(int32 Damage, const FUnitState& Defender) const
+{
+    int32 Result = Damage;
+    if (GetStatusStack(Defender, FName(TEXT("Vulnerable"))) > 0)
+    {
+        Result = FMath::FloorToInt(static_cast<float>(Result) * 1.5f);
+    }
+    return FMath::Max(0, Result);
+}
+
+void ABattleManager::ProcessTurnStartStatuses(FUnitState& Unit, const bool bIsPlayer)
+{
+    const int32 Bleed = GetStatusStack(Unit, FName(TEXT("Bleed")));
+    if (Bleed > 0)
+    {
+        if (bIsPlayer)
+        {
+            ApplyDamageToPlayer(Bleed);
+        }
+        else
+        {
+            ApplyDamageToEnemy(Bleed);
+        }
+        DecayStatus(Unit, FName(TEXT("Bleed")), 1);
+        AddBattleLog(FString::Printf(TEXT("%s suffers %d Bleed damage."), bIsPlayer ? TEXT("Player") : TEXT("Enemy"), Bleed));
+    }
+
+    DecayStatus(Unit, FName(TEXT("Weak")), 1);
+    DecayStatus(Unit, FName(TEXT("Vulnerable")), 1);
+    DecayStatus(Unit, FName(TEXT("Frail")), 1);
+}
+
+void ABattleManager::HealPlayer(const int32 Value)
+{
+    if (Value <= 0)
+    {
+        return;
+    }
+
+    PlayerState.HP = FMath::Min(PlayerState.MaxHP, PlayerState.HP + Value);
 }
