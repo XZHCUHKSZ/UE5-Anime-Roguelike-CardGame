@@ -6,6 +6,9 @@
 #include "BattleManager.generated.h"
 
 class UCardSystemComponent;
+class UDataTable;
+
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnBattleRewardReady, TArray<FCardRewardOption>, RewardOptions);
 
 UCLASS()
 class ANIMEROGUE_API ABattleManager : public AActor
@@ -23,6 +26,15 @@ public:
 
     UFUNCTION(BlueprintCallable)
     void EndPlayerTurn();
+
+    UFUNCTION(BlueprintCallable)
+    void CompleteBattle(bool bPlayerWon);
+
+    UFUNCTION(BlueprintPure)
+    const TArray<FCardRewardOption>& GetCurrentRewardOptions() const { return CurrentRewardOptions; }
+
+    UFUNCTION(BlueprintCallable)
+    bool PickRewardCard(int32 OptionIndex, bool bSkip);
 
     UFUNCTION(BlueprintPure)
     int32 GetCurrentEnergy() const { return CurrentEnergy; }
@@ -43,6 +55,15 @@ protected:
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Battle")
     TArray<FName> StarterDeck;
 
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Data")
+    UDataTable* CardDataTable = nullptr;
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Reward")
+    TArray<FName> RewardCardPool;
+
+    UPROPERTY(BlueprintAssignable, Category="Battle")
+    FOnBattleRewardReady OnBattleRewardReady;
+
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Battle")
     EBattlePhase CurrentPhase = EBattlePhase::BattleStart;
 
@@ -53,6 +74,10 @@ protected:
     UCardSystemComponent* CardSystem = nullptr;
 
 private:
+    UPROPERTY()
+    TArray<FCardRewardOption> CurrentRewardOptions;
+
     void EnterPlayerTurnStart();
     void EnterEnemyTurn();
+    void GenerateCardRewards(int32 RewardCount);
 };

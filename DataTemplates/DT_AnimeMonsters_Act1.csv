@@ -1,0 +1,10 @@
+enemy_id,name,faction,hp_max,intent_script_id,notes
+am_school_exec_01,风纪委员-刃,SchoolExec,38,intent_basic_melee,近战压制
+am_school_exec_02,风纪委员-盾,SchoolExec,46,intent_tank,高防拖回合
+am_spirit_01,幽灯灵,Spirit,34,intent_mage,诅咒与虚弱
+am_spirit_02,纸伞怨灵,Spirit,40,intent_trickster,先减益后连击
+am_mecha_idol_01,机偶应援姬,MechaIdol,36,intent_berserker,叠攻后爆发
+am_mecha_idol_02,蜂群无人机,MechaIdol,32,intent_basic_melee,低血量快攻
+am_elite_01,执行部长-绯刃,SchoolExec,88,intent_berserker,精英高爆发
+am_elite_02,咒缚术师-夜帷,Spirit,82,intent_mage,精英持续压制
+am_boss_01,歌姬核心体-零式,MechaIdol,240,intent_boss_act1,Act1 Boss

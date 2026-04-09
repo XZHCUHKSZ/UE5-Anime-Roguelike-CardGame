@@ -1,5 +1,10 @@
 #include "CardSystemComponent.h"
 
+void UCardSystemComponent::SetCardDataTable(UDataTable* InCardDataTable)
+{
+    CardDataTable = InCardDataTable;
+}
+
 void UCardSystemComponent::InitializeDeck(const TArray<FName>& InCardIds)
 {
     DrawPile.Reset();
@@ -79,6 +84,15 @@ void UCardSystemComponent::ShuffleIntoDrawPile()
 
 int32 UCardSystemComponent::ResolveCardCost(const FRuntimeCard& Card) const
 {
-    const int32 BaseCost = 1;
+    int32 BaseCost = 1;
+    if (CardDataTable)
+    {
+        const FCardData* Row = CardDataTable->FindRow<FCardData>(Card.CardId, TEXT("ResolveCardCost"));
+        if (Row)
+        {
+            BaseCost = Row->Cost;
+        }
+    }
+
     return FMath::Max(0, BaseCost + Card.TempCostOffset);
 }

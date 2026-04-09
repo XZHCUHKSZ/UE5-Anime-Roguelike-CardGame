@@ -31,7 +31,13 @@ public:
     UFUNCTION(BlueprintPure)
     const TArray<FRuntimeCard>& GetHand() const { return Hand; }
 
+    UFUNCTION(BlueprintCallable)
+    void SetCardDataTable(UDataTable* InCardDataTable);
+
 private:
+    UPROPERTY(EditAnywhere, Category="Data")
+    UDataTable* CardDataTable = nullptr;
+
     UPROPERTY()
     TArray<FRuntimeCard> DrawPile;
 

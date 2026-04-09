@@ -1,0 +1,11 @@
+event_id,title,type,option_a,option_b,option_c,result_a_script,result_b_script,result_c_script
+ae_001,天台邂逅,Story,接受训练获得1张攻击牌,支付10生命换稀有牌,离开,event_gain_attack_card,event_pay_hp_get_rare_card,event_leave
+ae_002,旧校舍异响,Risk,调查并获得遗物,稳妥撤离,离开,event_get_random_relic,event_nothing,event_leave
+ae_003,夜市卡摊,Shop,花75金币删卡,花120金币买遗物,离开,event_remove_card,event_buy_random_relic,event_leave
+ae_004,神社签文,Bless,回复20%生命,获得1诅咒+随机稀有卡,离开,event_heal_20pct,event_curse_for_rare,event_leave
+ae_005,偶像直播间,Utility,抽1张技能牌入卡组,获得50金币,离开,event_add_skill_card,event_gain_gold_50,event_leave
+ae_006,无人机残骸,Risk,拆解得金币,强拆受伤换遗物,离开,event_gain_gold_40,event_take_damage_get_relic,event_leave
+ae_007,密室补习,Story,升级1张牌,移除1张牌,离开,event_upgrade_card,event_remove_card,event_leave
+ae_008,薄雾小径,Risk,失去8生命快速前进,正常前进,离开,event_lose_hp_skip_fight,event_nothing,event_leave
+ae_009,祭典筹备,Bless,获得临时开局Buff,获得少量生命,离开,event_gain_battle_start_buff,event_heal_small,event_leave
+ae_010,终幕预告,Story,预览Boss能力并得1防御牌,直接离开,离开,event_gain_defense_card,event_leave,event_leave

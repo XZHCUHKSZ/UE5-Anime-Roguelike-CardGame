@@ -42,6 +42,17 @@ enum class ECardTargetType : uint8
     AllUnits
 };
 
+UENUM(BlueprintType)
+enum class EMapNodeType : uint8
+{
+    Battle,
+    Event,
+    Shop,
+    Rest,
+    Elite,
+    Boss
+};
+
 USTRUCT(BlueprintType)
 struct FCardData : public FTableRowBase
 {
@@ -103,4 +114,28 @@ struct FUnitState
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite)
     int32 Block = 0;
+};
+
+USTRUCT(BlueprintType)
+struct FCardRewardOption
+{
+    GENERATED_BODY()
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    FName CardId = NAME_None;
+};
+
+USTRUCT(BlueprintType)
+struct FMapNodeData
+{
+    GENERATED_BODY()
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    int32 Floor = 0;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    EMapNodeType NodeType = EMapNodeType::Battle;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    int32 NodeIndex = 0;
 };
