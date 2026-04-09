@@ -9,6 +9,7 @@ class ARunManager;
 class ABattleManager;
 class AEventManager;
 class AShopManager;
+class ASaveManager;
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnFlowStateChanged, ENodeFlowState, NewState);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnFlowNodeEntered, const FMapNodeData&, NodeData);
@@ -23,6 +24,9 @@ public:
 
     UFUNCTION(BlueprintCallable)
     bool StartFlow(int32 Seed);
+
+    UFUNCTION(BlueprintCallable)
+    bool StartFlowFromSave();
 
     UFUNCTION(BlueprintCallable)
     bool CompleteBattleNode(bool bPlayerWon);
@@ -62,7 +66,13 @@ protected:
     AShopManager* ShopManager = nullptr;
 
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Flow")
+    ASaveManager* SaveManager = nullptr;
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Flow")
     int32 RestHealAmount = 18;
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Flow")
+    bool bEnableAutoSave = true;
 
 private:
     UPROPERTY()
@@ -74,4 +84,5 @@ private:
     void SetFlowState(ENodeFlowState NewState);
     bool EnterCurrentNode();
     bool AdvanceToNextNodeOrComplete();
+    void AutoSaveIfEnabled() const;
 };

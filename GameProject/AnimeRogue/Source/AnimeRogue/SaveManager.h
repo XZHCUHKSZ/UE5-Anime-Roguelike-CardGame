@@ -27,6 +27,12 @@ public:
     UFUNCTION(BlueprintCallable)
     bool LoadMeta(FMetaSaveData& OutMetaData);
 
+    UFUNCTION(BlueprintPure)
+    bool HasRunSave() const;
+
+    UFUNCTION(BlueprintCallable)
+    bool ClearRunSave();
+
 protected:
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Save")
     FString RunSlotName = "Slot_Run_0";

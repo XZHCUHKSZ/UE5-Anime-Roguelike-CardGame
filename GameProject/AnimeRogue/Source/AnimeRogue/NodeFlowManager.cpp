@@ -2,6 +2,7 @@
 #include "BattleManager.h"
 #include "EventManager.h"
 #include "RunManager.h"
+#include "SaveManager.h"
 #include "ShopManager.h"
 
 ANodeFlowManager::ANodeFlowManager()
@@ -18,7 +19,27 @@ bool ANodeFlowManager::StartFlow(const int32 Seed)
 
     RunManager->StartRun(Seed);
     ActiveNode = RunManager->GetCurrentNode();
-    return EnterCurrentNode();
+    const bool bEntered = EnterCurrentNode();
+    AutoSaveIfEnabled();
+    return bEntered;
+}
+
+bool ANodeFlowManager::StartFlowFromSave()
+{
+    if (!RunManager || !SaveManager || !SaveManager->HasRunSave())
+    {
+        return false;
+    }
+
+    if (!SaveManager->LoadRun(RunManager))
+    {
+        return false;
+    }
+
+    ActiveNode = RunManager->GetCurrentNode();
+    const bool bEntered = EnterCurrentNode();
+    AutoSaveIfEnabled();
+    return bEntered;
 }
 
 bool ANodeFlowManager::CompleteBattleNode(const bool bPlayerWon)
@@ -33,6 +54,10 @@ bool ANodeFlowManager::CompleteBattleNode(const bool bPlayerWon)
     {
         RunManager->FinishRun(false);
         SetFlowState(ENodeFlowState::RunComplete);
+        if (SaveManager)
+        {
+            SaveManager->ClearRunSave();
+        }
         return true;
     }
 
@@ -51,8 +76,9 @@ bool ANodeFlowManager::ClaimBattleRewardAndAdvance(const int32 OptionIndex, cons
     {
         return false;
     }
-
-    return AdvanceToNextNodeOrComplete();
+    const bool bAdvanced = AdvanceToNextNodeOrComplete();
+    AutoSaveIfEnabled();
+    return bAdvanced;
 }
 
 bool ANodeFlowManager::ResolveEventAndAdvance(const int32 OptionIndex)
@@ -66,8 +92,9 @@ bool ANodeFlowManager::ResolveEventAndAdvance(const int32 OptionIndex)
     {
         return false;
     }
-
-    return AdvanceToNextNodeOrComplete();
+    const bool bAdvanced = AdvanceToNextNodeOrComplete();
+    AutoSaveIfEnabled();
+    return bAdvanced;
 }
 
 bool ANodeFlowManager::LeaveShopAndAdvance()
@@ -77,7 +104,9 @@ bool ANodeFlowManager::LeaveShopAndAdvance()
         return false;
     }
 
-    return AdvanceToNextNodeOrComplete();
+    const bool bAdvanced = AdvanceToNextNodeOrComplete();
+    AutoSaveIfEnabled();
+    return bAdvanced;
 }
 
 void ANodeFlowManager::SetFlowState(const ENodeFlowState NewState)
@@ -96,6 +125,7 @@ bool ANodeFlowManager::EnterCurrentNode()
     ActiveNode = RunManager->GetCurrentNode();
     OnFlowNodeEntered.Broadcast(ActiveNode);
     SetFlowState(ENodeFlowState::EnteringNode);
+    AutoSaveIfEnabled();
 
     switch (ActiveNode.NodeType)
     {
@@ -144,6 +174,10 @@ bool ANodeFlowManager::AdvanceToNextNodeOrComplete()
     {
         RunManager->FinishRun(true);
         SetFlowState(ENodeFlowState::RunComplete);
+        if (SaveManager)
+        {
+            SaveManager->ClearRunSave();
+        }
         return true;
     }
 
@@ -151,9 +185,23 @@ bool ANodeFlowManager::AdvanceToNextNodeOrComplete()
     {
         RunManager->FinishRun(true);
         SetFlowState(ENodeFlowState::RunComplete);
+        if (SaveManager)
+        {
+            SaveManager->ClearRunSave();
+        }
         return true;
     }
 
     ActiveNode = RunManager->GetCurrentNode();
     return EnterCurrentNode();
+}
+
+void ANodeFlowManager::AutoSaveIfEnabled() const
+{
+    if (!bEnableAutoSave || !SaveManager || !RunManager || !RunManager->IsRunActive())
+    {
+        return;
+    }
+
+    SaveManager->SaveRun(RunManager);
 }

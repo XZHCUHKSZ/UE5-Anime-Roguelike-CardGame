@@ -84,3 +84,18 @@ bool ASaveManager::LoadMeta(FMetaSaveData& OutMetaData)
     OutMetaData = SaveObj->MetaData;
     return true;
 }
+
+bool ASaveManager::HasRunSave() const
+{
+    return UGameplayStatics::DoesSaveGameExist(RunSlotName, RunSlotUserIndex);
+}
+
+bool ASaveManager::ClearRunSave()
+{
+    if (!UGameplayStatics::DoesSaveGameExist(RunSlotName, RunSlotUserIndex))
+    {
+        return true;
+    }
+
+    return UGameplayStatics::DeleteGameInSlot(RunSlotName, RunSlotUserIndex);
+}
