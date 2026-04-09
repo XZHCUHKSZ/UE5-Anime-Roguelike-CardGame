@@ -154,3 +154,75 @@ struct FEnemyIntentScriptRow : public FTableRowBase
     UPROPERTY(EditAnywhere, BlueprintReadOnly)
     FString Description;
 };
+
+USTRUCT(BlueprintType)
+struct FEventDataRow : public FTableRowBase
+{
+    GENERATED_BODY()
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly)
+    FName EventId = NAME_None;
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly)
+    FText Title;
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly)
+    FString Type;
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly)
+    FText OptionA;
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly)
+    FText OptionB;
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly)
+    FText OptionC;
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly)
+    FName ResultAScript = NAME_None;
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly)
+    FName ResultBScript = NAME_None;
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly)
+    FName ResultCScript = NAME_None;
+};
+
+USTRUCT(BlueprintType)
+struct FEventOptionData
+{
+    GENERATED_BODY()
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    FText Text;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    FName ScriptId = NAME_None;
+};
+
+USTRUCT(BlueprintType)
+struct FResolvedEventData
+{
+    GENERATED_BODY()
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    FName EventId = NAME_None;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    FText Title;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    TArray<FEventOptionData> Options;
+};
+
+USTRUCT(BlueprintType)
+struct FShopCardOffer
+{
+    GENERATED_BODY()
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    FName CardId = NAME_None;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    int32 Price = 0;
+};
